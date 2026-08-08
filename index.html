@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Slate For Web</title>
+    <title>Slate for Web</title>
     <link rel="manifest" href="/manifest.json">
-    <link class="rounded-full" rel="icon" href="/public/favicon.png">
+    <link class="rounded-full" rel="icon" href="/favicon.png">
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons for elegant minimalist UI -->
     <script src="https://unpkg.com/lucide@latest"></script>
     
     <style>
@@ -207,6 +208,7 @@
         <button onclick="clearCanvas()" class="w-full text-left px-4 py-2.5 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-500 flex items-center gap-3 transition-colors">
             <i data-lucide="trash-2" class="w-4 h-4"></i>
             <span>Delete All</span>
+        </button>
     </div>
 
     <!-- Notebook Selection Modal -->
@@ -234,30 +236,6 @@
             </div>
             
             <button onclick="closeNotebookModal()" class="absolute top-5 right-5 text-neutral-400 hover:text-neutral-800 dark:hover:text-white transition-colors">
-                <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
-        </div>
-    </div>
-
-    <!-- Windows App Promo Modal -->
-    <div id="windows-promo-modal" class="hidden fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center transition-opacity">
-        <div class="bg-white dark:bg-[#121212] w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-neutral-200/60 dark:border-neutral-800/60 relative text-center">
-            <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i data-lucide="monitor" class="w-6 h-6"></i>
-            </div>
-            <h2 class="text-xl font-serif mb-2 dark:text-neutral-200">Get Slate for Windows</h2>
-            <p class="text-sm text-neutral-600 dark:text-neutral-400 mb-6 font-sans">
-                Experience more upcoming features and better performance with our native desktop app.
-            </p>
-            <div class="flex flex-col gap-3">
-                <a href="https://apps.microsoft.com/detail/9nrgz3wz4lmn" target="_blank" onclick="dismissWindowsPromo()" class="w-full py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm inline-block text-center decoration-none">
-                    Download from Microsoft Store
-                </a>
-                <button onclick="dismissWindowsPromo()" class="w-full py-2.5 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg text-sm font-medium transition-colors">
-                    Maybe Later
-                </button>
-            </div>
-            <button onclick="dismissWindowsPromo()" class="absolute top-5 right-5 text-neutral-400 hover:text-neutral-800 dark:hover:text-white transition-colors">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
@@ -532,7 +510,7 @@
             if (type === 'document') return; 
             if (!state.sketchMode) return;
             
-            if (e.target.closest('button') || e.target.closest('input') || e.target.closest('#custom-context-menu') || e.target.closest('#sketch-toolbar') || e.target.closest('#notebook-modal') || e.target.closest('#windows-promo-modal')) {
+            if (e.target.closest('button') || e.target.closest('input') || e.target.closest('#custom-context-menu') || e.target.closest('#sketch-toolbar') || e.target.closest('#notebook-modal')) {
                 return;
             }
 
@@ -953,11 +931,14 @@
             list.innerHTML = '';
             notebooks.forEach(nb => {
                 const item = document.createElement('div');
-                item.className = `flex flex-col gap-1.5 p-3 rounded-xl cursor-pointer transition-colors ${nb.id === activeNotebookId ? 'bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800' : 'hover:bg-neutral-100 dark:hover:bg-neutral-800/80'}`;
+                item.className = `group flex flex-col gap-1.5 p-3 rounded-xl cursor-pointer transition-colors ${nb.id === activeNotebookId ? 'bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800' : 'hover:bg-neutral-100 dark:hover:bg-neutral-800/80'}`;
                 
                 const header = document.createElement('div');
-                header.className = "flex items-center justify-between pointer-events-none";
+                header.className = "flex items-center justify-between";
                 
+                const titleBadgeWrapper = document.createElement('div');
+                titleBadgeWrapper.className = "flex items-center gap-2 pointer-events-none";
+
                 const title = document.createElement('span');
                 title.className = `font-medium text-sm ${nb.id === activeNotebookId ? 'text-indigo-600 dark:text-indigo-400' : 'text-neutral-700 dark:text-neutral-300'}`;
                 title.innerText = nb.name;
@@ -976,13 +957,45 @@
                     badge.className += " bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400";
                 }
                 
-                header.appendChild(title);
-                header.appendChild(badge);
+                titleBadgeWrapper.appendChild(title);
+                titleBadgeWrapper.appendChild(badge);
+                header.appendChild(titleBadgeWrapper);
+
+                const delBtn = document.createElement('button');
+                delBtn.innerHTML = '<i data-lucide="trash-2" class="w-4 h-4"></i>';
+                delBtn.className = "text-neutral-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 p-1.5 rounded opacity-0 group-hover:opacity-100 transition-all";
+                delBtn.title = "Delete Notebook";
+                delBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    deleteNotebook(nb.id);
+                };
+                header.appendChild(delBtn);
+
                 item.appendChild(header);
                 
                 item.onclick = () => switchNotebook(nb.id);
                 list.appendChild(item);
             });
+            lucide.createIcons();
+        }
+
+        function deleteNotebook(id) {
+            if (notebooks.length === 1) {
+                showToast("Cannot delete your last notebook!");
+                return;
+            }
+            if (confirm("Are you sure you want to delete this notebook? This cannot be undone.")) {
+                notebooks = notebooks.filter(nb => nb.id !== id);
+                localStorage.setItem('canvas_notebooks', JSON.stringify(notebooks));
+                localStorage.removeItem(`canvas_data_${id}`);
+                
+                if (activeNotebookId === id) {
+                    switchNotebook(notebooks[0].id);
+                } else {
+                    renderNotebookList();
+                }
+                showToast("Notebook deleted");
+            }
         }
 
         function createNewNotebook() {
@@ -1269,29 +1282,6 @@
             }
         }
 
-        // --- Windows Promotion Logic ---
-        function checkWindowsOS() {
-            // Very simple OS detection via userAgent
-            const isWindows = navigator.userAgent.toLowerCase().includes('windows');
-            const hasSeenPromo = localStorage.getItem('slate_windows_promo_dismissed');
-            
-            if (isWindows && !hasSeenPromo) {
-                // Short delay so the pop-up isn't jarring on immediate page load
-                setTimeout(() => {
-                    const modal = document.getElementById('windows-promo-modal');
-                    if(modal) {
-                        modal.classList.remove('hidden');
-                        lucide.createIcons();
-                    }
-                }, 1500); 
-            }
-        }
-
-        function dismissWindowsPromo() {
-            localStorage.setItem('slate_windows_promo_dismissed', 'true');
-            document.getElementById('windows-promo-modal').classList.add('hidden');
-        }
-
         // --- Custom Context Menu Operations ---
         const contextMenu = document.getElementById('custom-context-menu');
 
@@ -1328,7 +1318,7 @@
                 window.close();
             } catch(e) {}
             // Graceful fallback to exit immersive content
-            window.location.href = 'javascript:window.close();';
+            window.location.href = 'https://checkers.page/error';
         }
 
         function clearCanvas() {
@@ -1673,8 +1663,41 @@
             }, 3000);
         }
 
+        // --- Textarea Formatting Helper ---
+        function formatTextareaSelection(textarea, prefix, suffix) {
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const text = textarea.value;
+            const selection = text.substring(start, end);
+            
+            textarea.setRangeText(prefix + selection + suffix, start, end, 'select');
+            textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+
         // --- Keyboard Hotkeys & Global Handlers ---
         window.addEventListener('keydown', (e) => {
+            // Check for textarea formatting shortcuts (Ctrl+B, Ctrl+I, Ctrl+U)
+            if (e.ctrlKey || e.metaKey) {
+                const activeEl = document.activeElement;
+                if (activeEl && activeEl.tagName === 'TEXTAREA') {
+                    if (e.key.toLowerCase() === 'b') {
+                        e.preventDefault();
+                        formatTextareaSelection(activeEl, '**', '**');
+                        return;
+                    }
+                    if (e.key.toLowerCase() === 'i') {
+                        e.preventDefault();
+                        formatTextareaSelection(activeEl, '*', '*');
+                        return;
+                    }
+                    if (e.key.toLowerCase() === 'u') {
+                        e.preventDefault();
+                        formatTextareaSelection(activeEl, '<u>', '</u>');
+                        return;
+                    }
+                }
+            }
+
             if (e.key === 'Tab') {
                 e.preventDefault();
                 
@@ -1733,7 +1756,6 @@
             sketchCanvas.height = 5000;
             loadLocalState();
             workspace.scrollTop = 0;
-            checkWindowsOS(); // Call promotion check on load
         }
     </script>
 </body>
